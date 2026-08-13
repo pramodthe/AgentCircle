@@ -1,26 +1,23 @@
-.env
-.env.*
-!.env.example
-*.log
 .DS_Store
-Thumbs.db
-
-node_modules/
-dist/
-build/
-.next/
-.turbo/
-coverage/
-
-__pycache__/
+.env
 .venv/
-venv/
-*.pyc
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.playwright-cli/
+*.py[cod]
+*.tsbuildinfo
+backend/.coverage
+backend/htmlcov/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+output/
+snapshots/
 
-.aws/
-.idea/
-*.js.map
+# Vendored plugin skill docs (MongoDB Claude Code plugin) — not project source.
+.agents/
+.claude/
 
-mcp.json.local
-.mcp-cache/
-mcp-*.log
+# Design sources live in Figma, not in git — 15MB binaries git cannot diff.
+*.fig
