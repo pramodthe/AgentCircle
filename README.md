@@ -37,11 +37,11 @@ Two contracts govern changes here:
 
 ## Run locally
 
-Requirements: Docker, Node.js 20+, `uv`, Python ≥3.12.
+Requirements: Node.js 20+, `uv`, Python ≥3.12, and a MongoDB Atlas URI in `.env`.
 
 ```bash
 cp .env.example .env
-docker compose up -d mongodb
+# Set MONGODB_URI to your Atlas connection string (no local Docker MongoDB).
 
 cd backend
 uv sync

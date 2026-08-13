@@ -87,7 +87,7 @@ Start with Phase 0, task 0.1. Stop and report when the phase Done-when criteria 
 | Language | Python ≥3.12 (`uv`), TypeScript (Vite 7, React 19) |
 | API | FastAPI + uvicorn, port **8000** |
 | Web | React Router 7 SPA, port **5173** (`127.0.0.1`) |
-| DB | MongoDB 8 via Docker Compose, or Atlas |
+| DB | MongoDB Atlas (primary); tests use mongomock |
 | Embeddings | `voyage` \| `mongodb` \| `openai` \| `local` (tests use `local`) |
 | LLM | openrouter \| openai \| fireworks via `langchain-openai` ChatOpenAI |
 | Research | Exa (optional) |
@@ -101,7 +101,7 @@ Start with Phase 0, task 0.1. Stop and report when the phase Done-when criteria 
 
 ```bash
 cp .env.example .env
-docker compose up -d mongodb
+# Set MONGODB_URI to Atlas (mongodb+srv://…); no local Docker MongoDB.
 
 cd backend && uv sync
 uv run uvicorn app.main:app --reload --port 8000

@@ -23,11 +23,12 @@ cd ../frontend && npm run build   # once SPA exists
 
 ### 0.1 Skeleton
 - [x] Create tree from `design.md` §2 (empty modules OK).
-- **Files:** `docker-compose.yml` (mongo:8.0), `.env.example` (copy from product),
+- **Files:** `.env.example` (Atlas `MONGODB_URI`), 
   `backend/pyproject.toml`, `backend/app/__init__.py`, `backend/app/main.py` (empty FastAPI),
   `frontend/package.json`, `index.html`, `vite.config.ts`, `tsconfig`s,
   `frontend/src/main.tsx` (hello).
-- **Verify:** `docker compose up -d mongodb`; `cd backend && uv sync`; `cd frontend && npm install`.
+- **Verify:** Atlas URI set in `.env`; `cd backend && uv sync`; `cd frontend && npm install`.
+  (No local Docker MongoDB — use Atlas.)
 
 ### 0.2 Settings
 - [x] Implement `Settings` exactly as `design.md` §3.
