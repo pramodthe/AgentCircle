@@ -37,13 +37,13 @@ Import `./styles.css` once here.
 | `/register` | AnonymousOnly | `SignIn mode="register"` |
 | `/onboarding` | Protected `allowIncomplete` | `Onboarding` |
 | nested under Protected + `AppShell`: | | |
-| `/find` | | `Discover` (home) |
-| `/feed` | | `Feed` (Circle → Updates) |
+| `/feed` | | `Feed` |
+| `/find` | | `Discover` |
 | `/community` | | `CommunityIndex` |
 | `/community/:postId` | | `CommunityThreadPage` |
-| `/messages` | | `Messages` (Circle → Messages) |
+| `/messages` | | `Messages` |
 | `/messages/:userId` | | `Messages` |
-| `/connections` | | `Connections` (Circle → Connections) |
+| `/connections` | | `Connections` |
 | `/me` | | `Me` |
 | `/me/:tab` | | `Me` (map tab → hash) |
 | `/interview/:subjectId` | | `InterviewPage` |
@@ -59,7 +59,7 @@ Import `./styles.css` once here.
 - **Booting:** while `status === "loading"` show “Waking up your agent…”.
 - **Protected:** anonymous → `/login` (keep `state.from`); if onboarding incomplete and
   not `allowIncomplete` → `/onboarding`.
-- **AnonymousOnly:** authenticated → `/find`.
+- **AnonymousOnly:** authenticated → `/feed`.
 
 ---
 
@@ -88,30 +88,28 @@ refresh(): Promise<void>
 
 ## 4. AppShell
 
-Left sticky nav (brand AgentCircle, me chip → `/me`, four primary destinations, footer
-with `StackStatus` + Sign out). No floating topbar. No stock photography in chrome.
-Avatars go through `Avatar` — never a second initials helper in the shell.
+Left sticky nav (brand AgentCircle / “SF Builders”, me chip → `/me`, primary nav, footer
+with “Your agent is online”, `StackStatus`, sign out).
 
 | `to` | Label |
 |---|---|
-| `/find` | Find |
-| `/feed` | Circle (active also on `/messages` and `/connections`) |
+| `/feed` | News Feed |
+| `/find` | Discover |
 | `/community` | Community |
+| `/messages` | Messages |
+| `/connections` | Connections |
 | `/me` | You |
 
-**Circle subnav** (`CircleNav`) on Feed, Messages, Connections: Updates · Messages · Connections.
-
 **StackStatus:** `discoveryApi.status()` once. If `!embeddings.semantic` or Atlas off →
-warn “Limited search”; else “Search is live”. Tooltip names path/model/rerank.
-Do not add a second always-on “agent is online” card.
+warn “Limited search mode”; else “Agent is grounded”. Tooltip names path/model/rerank.
 
 Export **`PageHeader`** with variants:
 
 | variant | Use |
 |---|---|
-| `plain` (default) | Most pages, including Discover and Connections |
-| `feature` | Messages |
-| `hero` | Unused. If revived, solid ink — never Unsplash. |
+| `plain` (default) | Most pages |
+| `feature` | Messages-style |
+| `hero` | Discover, Connections (photo banner) |
 
 Props: `icon?`, `title`, `blurb?`, `eyebrow?`, `action?`, `aside?`, `variant?`.
 
@@ -123,7 +121,7 @@ Every shell page uses `PageHeader` — do not invent a fifth header pattern.
 
 ### Landing `/`
 Marketing: hero, product preview, walkthrough steps, under-the-hood, CTA.
-Uses `useAuth().status` only (no API). Signed-in CTA → `/find`, else `/login`.
+Uses `useAuth().status` only (no API). Signed-in CTA → `/feed`, else `/login`.
 
 ### HowItWorks `/how-it-works`
 Reads `runtimeApi.status()`. Explains ingest → chunk → embed → store → retrieve → answer.
@@ -134,18 +132,17 @@ Prototype: `EnterAs` person picker (demo accounts). Uses `signIn(email, DEMO_PAS
 
 ### Onboarding `/onboarding`
 Four steps: **Basics** (profile fields) → **Sources** (upload/link) → **Personality**
-(extras) → **Build** (`personaApi.build`) → `navigate("/find")` + `refresh()`.
+(extras) → **Build** (`personaApi.build`) → `navigate("/feed")` + `refresh()`.
 
 ### Feed `/feed`
-Circle → Updates. `socialApi.feed`, composer (text / photo / clip / location /
-`draftPost` / `createStory`), `react`, agent post. **No Recents/Friends/Popular filters.**
-Stories row only when a story exists. **No stock photos** as covers.
-Client-only comments must say they are not saved. Empty feed: one CTA to `/find`.
+`socialApi.feed`, composer (text / photo / clip / location / `draftPost` / `createStory`),
+`react`, agent post. Connections-first feed. **No stock photos** as covers.
+Client-only comment UI may exist but must not pretend server persistence if it does not.
 
-### Discover `/find` (home)
+### Discover `/find`
 Modes: People (`discoveryApi.search`, query ≥ 8) | Photos (`mediaApi.search`).
-Match cards: quoted evidence first, then name, then one primary CTA → interview.
-Do not show a ranked-match stat before a search. Show refusal reason for appearance queries.
+Match cards: evidence, `match_percent`, retrieval badge, CTA → interview / research /
+connect. Show refusal reason for appearance queries.
 
 ### Community
 **Index:** posts list, create post, consent sidebar (topics, pending publish, gap demand).
@@ -156,7 +153,7 @@ Inbox + thread. Auto-open first conversation if no `:userId`.
 `messagesApi.conversations|thread|send`.
 
 ### Connections
-Tabs: Accepted and Pending. Recommended / Rejected / Saved only if they have rows.
+Tabs: Accepted / Pending / (optional empty Recommended/Rejected/Saved).
 `socialApi.connections|respond|withdraw`. Show provenance counts.
 
 ### Me `/me`

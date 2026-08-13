@@ -84,9 +84,7 @@ def send_message(
     try:
         return messages.send(sender_id=user["_id"], recipient_id=other_id, body=payload.body)
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
 
 @router.post("/{other_id}/read", status_code=status.HTTP_204_NO_CONTENT)

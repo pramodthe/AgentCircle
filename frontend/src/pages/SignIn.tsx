@@ -1,4 +1,4 @@
-import { ShieldCheck, Sparkles } from "lucide-react";
+import { ShieldCheck, Sparkles, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import EnterAs from "../components/EnterAs";
 
@@ -22,10 +22,14 @@ export default function SignIn({ mode }: { mode: "login" | "register" }) {
           <div className="auth-live-pill"><i /> Live builder network</div>
           <div className="auth-floating-person person-one"><span>MC</span><b>Maya</b></div>
           <div className="auth-floating-person person-two"><span>KT</span><b>Kenji</b></div>
+          <div className="auth-story-preview">
+            <header><b>Stories</b><CameraMark /></header>
+            <div><span /><span /><span /></div>
+          </div>
           <div className="auth-social-copy">
-            <span>GROUNDED INTRODUCTIONS FOR BUILDERS</span>
-            <h1>Find who to meet. Ask their clone. You send the intro.</h1>
-            <p>Matches come from what people wrote — not job titles. Silence beats a fake you.</p>
+            <span>AI SOCIAL NETWORKING FOR BUILDERS</span>
+            <h1>Meet people like a social app. Get introduced by your agent.</h1>
+            <p>Browse what founders are building, follow their stories, and let grounded agents find the warmest path to a real conversation.</p>
           </div>
         </section>
 
@@ -38,4 +42,8 @@ export default function SignIn({ mode }: { mode: "login" | "register" }) {
       </main>
     </div>
   );
+}
+
+function CameraMark() {
+  return <span className="camera-mark"><Users size={13} /></span>;
 }

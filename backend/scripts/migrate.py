@@ -24,6 +24,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from app.settings import get_settings
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SNAPSHOT_ROOT = REPO_ROOT / "snapshots"
 
@@ -54,13 +56,12 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    settings = get_settings()
+
     # 1. A fresh snapshot if the old cluster is still reachable. Best effort on purpose:
     #    the whole point of this script is the case where it is already gone.
     if not args.skip_backup:
-        if not run(
-            "1/4  Snapshot the current cluster",
-            ["scripts.backup", "--label", "premigration"],
-        ):
+        if not run("1/4  Snapshot the current cluster", ["scripts.backup", "--label", "premigration"]):
             print("\n  ! could not snapshot the current cluster — it may already be gone.")
             print("    Continuing with the newest snapshot already on disk.")
     else:
@@ -94,13 +95,7 @@ def main() -> None:
     if args.write_env:
         env_path = REPO_ROOT / ".env"
         text = env_path.read_text()
-        text = re.sub(
-            r"^MONGODB_URI=.*$",
-            f"MONGODB_URI={args.target_uri}",
-            text,
-            count=1,
-            flags=re.M,
-        )
+        text = re.sub(r"^MONGODB_URI=.*$", f"MONGODB_URI={args.target_uri}", text, 1, re.M)
         env_path.write_text(text)
         print(f"  .env updated -> {masked}")
     else:

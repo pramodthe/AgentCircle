@@ -4,8 +4,10 @@ import {
   Image,
   MapPin,
   MessageCircle,
+  MoreHorizontal,
   Plus,
   Send,
+  Smile,
   Sparkles,
   Video,
   X,
@@ -13,12 +15,12 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { socialApi } from "../api";
-import { CircleNav, PageHeader } from "../AppShell";
 import { useAuth } from "../auth";
-import { Avatar } from "../components/Avatar";
 import { SkeletonList } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import type { FeedPost, FeedResponse, SocialPerson } from "../types";
+
+type FeedFilter = "Recents" | "Friends" | "Popular";
 type ComposerAttachment = {
   id: string;
   mediaType: string;
@@ -62,13 +64,7 @@ function StoryViewer({ post, onClose }: { post: FeedPost; onClose: () => void })
     >
       <article className={`story-viewer ${image ? "has-image" : ""} tone-${person?.accent || "violet"}`}>
         <header>
-          <Avatar
-            name={person?.display_name}
-            mediaId={person?.avatar_media_id}
-            accent={person?.accent || "violet"}
-            size="md"
-            aiGenerated={person?.avatar_ai_generated}
-          />
+          <span className={`avatar avatar-md tone-${person?.accent || "violet"}`}>{initials(person)}</span>
           <span>
             <b>{person?.display_name || "Member"}</b>
             <small>{relativeTime(post.created_at)} ago</small>
@@ -94,17 +90,18 @@ function StoryViewer({ post, onClose }: { post: FeedPost; onClose: () => void })
 
 function PostCard({
   post,
+  liked,
   myInitials,
   accent,
   localComments,
   commenting,
   commentDraft,
-  liked,
   onToggleLike,
   onToggleComment,
   onCommentChange,
   onAddComment,
   onShare,
+  onWarmIntro,
 }: {
   post: FeedPost;
   liked: boolean;
@@ -118,6 +115,7 @@ function PostCard({
   onCommentChange: (value: string) => void;
   onAddComment: () => void;
   onShare: () => void;
+  onWarmIntro: () => void;
 }) {
   const person = post.author;
   const likeCount = (post.reaction_counts.like || 0);
@@ -128,13 +126,9 @@ function PostCard({
   return (
     <article className={post.kind === "agent" ? "feed-post agent" : "feed-post"}>
       <header>
-        <Avatar
-          name={person?.display_name}
-          mediaId={person?.avatar_media_id}
-          accent={person?.accent || "violet"}
-          size="md"
-          aiGenerated={person?.avatar_ai_generated}
-        />
+        <span className={`avatar tone-${person?.accent || "violet"}`} aria-hidden="true">
+          {initials(person)}
+        </span>
         <div>
           <b>
             {person?.handle ? <Link to={`/u/${person.handle}`}>{person.display_name}</Link> : "Member"}
@@ -146,6 +140,9 @@ function PostCard({
             {post.from_connection ? " · connection" : ""}
           </small>
         </div>
+        <button className="icon-button" type="button" aria-label="More post actions">
+          <MoreHorizontal size={20} />
+        </button>
       </header>
 
       {post.kind === "agent" && post.body.includes(".") ? (
@@ -184,16 +181,15 @@ function PostCard({
         <button type="button" onClick={onShare}>
           <Send size={15} /> Share
         </button>
-        <Link className="feed-find-link" to="/find">
-          Find people <ChevronRight size={14} />
-        </Link>
+        <button type="button" onClick={onWarmIntro}>
+          Warm intro <ChevronRight size={14} />
+        </button>
       </footer>
 
       {localComments.map((item, index) => (
         <p className="local-comment" key={`${post._id}-${index}`}>
           <b>You</b>
           {item}
-          <small>Not saved</small>
         </p>
       ))}
 
@@ -209,7 +205,7 @@ function PostCard({
           <input
             autoFocus
             aria-label="Write a comment"
-            placeholder="Write a comment — saved only on this device"
+            placeholder="Write a thoughtful comment…"
             value={commentDraft}
             onChange={(event) => onCommentChange(event.target.value)}
           />
@@ -230,6 +226,7 @@ export default function Feed() {
   const photoFileRef = useRef<HTMLInputElement>(null);
   const clipFileRef = useRef<HTMLInputElement>(null);
   const [feed, setFeed] = useState<FeedResponse>();
+  const [filter, setFilter] = useState<FeedFilter>("Friends");
   const [composer, setComposer] = useState("");
   const [location, setLocation] = useState("");
   const [showLocation, setShowLocation] = useState(false);
@@ -306,13 +303,23 @@ export default function Feed() {
       .slice(0, 4);
   }, [feed, user?._id]);
 
-  const visiblePosts = useMemo(
-    () => (feed?.posts || []).filter((post) => post.presentation !== "story"),
-    [feed],
-  );
+  const visiblePosts = useMemo(() => {
+    const rows = [...(feed?.posts || [])].filter((post) => post.presentation !== "story");
+    if (filter === "Friends") {
+      const friends = rows.filter((post) => post.from_connection);
+      return friends.length ? friends : rows;
+    }
+    if (filter === "Popular") {
+      return rows.sort(
+        (a, b) => (b.reaction_counts.like || 0) - (a.reaction_counts.like || 0),
+      );
+    }
+    return rows;
+  }, [feed, filter]);
 
   const myInitials = initials({ display_name: user?.display_name });
   const accent = profile?.theme?.accent || "violet";
+  const interests = [...(profile?.interests || []), "UI/UX", "Music", "AI founders", "Product"].slice(0, 4);
 
   const focusComposer = () => {
     requestAnimationFrame(() => composerRef.current?.focus());

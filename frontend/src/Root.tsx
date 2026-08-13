@@ -52,7 +52,7 @@ function Protected({
 function AnonymousOnly({ children }: { children: ReactNode }) {
   const { status } = useAuth();
   if (status === "loading") return <Booting />;
-  if (status === "authenticated") return <Navigate to="/find" replace />;
+  if (status === "authenticated") return <Navigate to="/feed" replace />;
   return <>{children}</>;
 }
 

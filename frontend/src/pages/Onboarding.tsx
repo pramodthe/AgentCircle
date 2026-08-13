@@ -182,7 +182,7 @@ export default function Onboarding() {
       await refresh();
     });
 
-  const finish = () => navigate("/find", { replace: true });
+  const finish = () => navigate("/feed", { replace: true });
 
   const stepIndex = STEPS.findIndex((item) => item.id === step);
 
