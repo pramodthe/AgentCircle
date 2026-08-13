@@ -45,15 +45,15 @@ function ProductPreview() {
     <div className="lp-device" aria-hidden="true">
       <div className="lp-chrome">
         <span className="lp-dots"><i /><i /><i /></span>
-        <span className="lp-url">agentcircle.com/feed</span>
+        <span className="lp-url">agentcircle.com/find</span>
       </div>
       <div className="lp-app">
         <aside className="lp-app-nav">
           <strong>AgentCircle</strong>
-          <span className="on">News Feed</span>
-          <span>Discover</span>
-          <span>Community</span>
-          <span>You</span>
+              <span className="on">Find</span>
+              <span>Circle</span>
+              <span>Community</span>
+              <span>You</span>
         </aside>
         <div className="lp-feed">
           <div className="lp-stories">
@@ -201,7 +201,7 @@ export default function Landing() {
           </nav>
           <div className="landing-nav-actions">
             {signedIn ? (
-              <Link to="/feed" className="landing-nav-primary">Open your feed</Link>
+              <Link to="/find" className="landing-nav-primary">Find people</Link>
             ) : (
               <Link to="/login" className="landing-nav-primary">Log in</Link>
             )}
@@ -220,7 +220,7 @@ export default function Landing() {
             </p>
             <div className="landing-hero-actions">
               {signedIn ? (
-                <Link to="/feed" className="landing-primary-cta">Open your feed <ArrowRight size={16} /></Link>
+                <Link to="/find" className="landing-primary-cta">Find people <ArrowRight size={16} /></Link>
               ) : (
                 <Link to="/login" className="landing-primary-cta">Log in <ArrowRight size={16} /></Link>
               )}
@@ -343,7 +343,7 @@ export default function Landing() {
           <h2>Put a second brain on the network.</h2>
           <p>Find who to meet. Ask their clone. Remember what worked.</p>
           {signedIn ? (
-            <Link to="/feed">Open your feed <ArrowRight size={16} /></Link>
+            <Link to="/find">Find people <ArrowRight size={16} /></Link>
           ) : (
             <Link to="/login">Log in <ArrowRight size={16} /></Link>
           )}

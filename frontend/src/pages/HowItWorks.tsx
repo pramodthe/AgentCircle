@@ -350,7 +350,7 @@ export default function HowItWorks() {
             <Link to="/#what">What you get</Link>
           </nav>
           <div className="landing-nav-actions">
-            <Link to={signedIn ? "/feed" : "/login"} className="landing-nav-primary">
+            <Link to={signedIn ? "/find" : "/login"} className="landing-nav-primary">
               {signedIn ? "Open your feed" : "Log in"}
             </Link>
           </div>
@@ -380,7 +380,7 @@ export default function HowItWorks() {
                       type="button"
                       className={index === active ? "on" : index < active ? "done" : ""}
                       onClick={() => select(index)}
-                      aria-current={index === active}
+                      aria-current={index === active ? "step" : undefined}
                     >
                       <span className="hiw-step-mark"><Icon size={15} /></span>
                       <span className="hiw-step-text">

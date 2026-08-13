@@ -19,7 +19,7 @@ export default function EnterAs() {
     setBusy(email);
     try {
       await signIn(email, DEMO_PASSWORD);
-      navigate("/feed", { replace: true });
+      navigate("/find", { replace: true });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not enter");
     } finally {
