@@ -1,0 +1,26 @@
+---
+description: Spec-driven build — always use spec/ steering and feature specs
+globs:
+alwaysApply: true
+---
+
+# AgentCircle spec-driven workflow
+
+This repo uses a Kiro-style spec workflow under `spec/` (not `.kiro`).
+
+## Before implementing features
+
+1. Read relevant files in `spec/steering/` (product, tech, structure, standards).
+2. Use or create a feature folder under `spec/specs/<feature-name>/` with:
+   - `requirements.md`
+   - `design.md`
+   - `tasks.md`
+3. Prefer executing unchecked items in `tasks.md` over inventing scope.
+4. When requirements change: update requirements → refine design → sync tasks.
+5. For recurring checks, use prompts in `spec/hooks/`.
+
+## Do not
+
+- Create a `.kiro/` directory
+- Skip specs for non-trivial features
+- Commit secrets; use `.env.example` for names only
