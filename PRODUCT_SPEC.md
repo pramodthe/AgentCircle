@@ -2,7 +2,7 @@
 
 **Status:** living document — the *product* contract. For the engineering contract (acceptance criteria, build order, and the constraints that make a rebuild avoid known bugs) see [`spec/`](spec/README.md). Where they disagree about what the product is, this file wins; about what the code must do, `spec/requirements.md` wins.
 
-**Supersedes** `AGENTCIRCLE_PERSISTENT_CONTEXT_SPEC.md`, kept only for history — the single-user demo domain it described was deleted on 2026-08-12.
+**Supersedes** the deleted hackathon-era `AGENTCIRCLE_PERSISTENT_CONTEXT_SPEC.md` — the single-user demo domain it described was removed on 2026-08-12 and is not in this tree.
 
 **Last revised:** 2026-08-13
 

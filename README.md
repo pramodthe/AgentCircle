@@ -9,7 +9,9 @@ Two contracts govern changes here:
 - **[PRODUCT_SPEC.md](./PRODUCT_SPEC.md)** — thesis, principles, per-feature acceptance criteria, data model, safety constraints. Wins on what the product *is*.
 - **[spec/](./spec/README.md)** — the buildable engineering spec: `requirements.md` (R1–R17), `constraints.md` (C1–C28 — bugs that already shipped), `data-model.md`, `design.md`, `api.md`, `frontend.md`, `tasks.md`. Wins on what the code *must do*.
 
-[AGENTCIRCLE_PERSISTENT_CONTEXT_SPEC.md](./AGENTCIRCLE_PERSISTENT_CONTEXT_SPEC.md) is the older hackathon-era contract, kept for history only. The single-user demo domain it described (Alex Morgan, `/api/agentcircle/*`, the LangGraph durable-workflow checkpointer) was **deleted**.
+The older hackathon-era contract (`AGENTCIRCLE_PERSISTENT_CONTEXT_SPEC.md`) is superseded
+by `PRODUCT_SPEC.md` and is not in this tree. The single-user demo domain it described
+(Alex Morgan, `/api/agentcircle/*`, the LangGraph durable-workflow checkpointer) was **deleted**.
 
 ## What's built
 
@@ -83,7 +85,7 @@ Everything is optional; each unset key degrades to a labelled fallback rather th
 
 | Setting | Effect |
 |---|---|
-| `MONGODB_URI` / `MONGODB_DATABASE` | Docker Mongo or Atlas. Atlas unlocks `$vectorSearch` / `$search`. |
+| `MONGODB_URI` / `MONGODB_DATABASE` | MongoDB Atlas URI (no local Docker Mongo). Atlas unlocks `$vectorSearch` / `$search`. |
 | `JWT_SECRET` | Required. The app **refuses to boot** with the `.env.example` value against a remote database. |
 | `EMBEDDING_PROVIDER` | `voyage` \| `mongodb` \| `openai` \| `local`. `local` is a 128-dim hashed bag-of-tokens — fine for tests, not for anything a user sees. |
 | `VOYAGE_API_KEY` / `MONGODB_AI_API_KEY` | One door for embeddings, rerank, and multimodal. Quota is per account per minute — route them together. |
@@ -179,4 +181,4 @@ Four invariants, each of which exists because breaking it produced a real failur
 3. **Declining is a feature.** An agent with no grounding says so. A fabricated opinion published under a real person's name is the worst failure this product has.
 4. **Never invent biographical facts.** The keyless persona path is deliberately thin and labels itself `heuristic` — a visibly sparse persona beats one that looks complete but is guessed.
 
-`spec/constraints.md` has 28 more, all found by *running* the app rather than reviewing it. Read the relevant ones before changing a subsystem. [CLAUDE.md](./CLAUDE.md) is the working guide for agents editing this repo.
+`spec/constraints.md` has 28 more, all found by *running* the app rather than reviewing it. Read the relevant ones before changing a subsystem. Agents follow `.cursor/rules/spec-driven.mdc` and `spec/README.md`.

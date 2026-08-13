@@ -16,7 +16,7 @@ markdown. The Cursor rule `.cursor/rules/spec-driven.mdc` points agents at this 
 | 1 | [`README.md`](README.md) | This file — how to use the spec |
 | 2 | [`../PRODUCT_SPEC.md`](../PRODUCT_SPEC.md) | Product thesis, principles, feature intent |
 | 3 | [`requirements.md`](requirements.md) | Testable EARS acceptance criteria (R1–R17) |
-| 4 | [`constraints.md`](constraints.md) | Bugs that already shipped (C1–C22) — read before coding |
+| 4 | [`constraints.md`](constraints.md) | Bugs that already shipped (C1–C28) — read before coding |
 | 5 | [`data-model.md`](data-model.md) | Every Mongo collection, every field, indexes |
 | 6 | [`design.md`](design.md) | Architecture, module APIs, algorithms, sequences |
 | 7 | [`api.md`](api.md) | Every HTTP endpoint with request/response shapes |

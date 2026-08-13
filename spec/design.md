@@ -40,12 +40,35 @@ FastAPI (app/main.py)  (port 8000)  — thin routes, all state on app.state via 
        ├── MemoryLog           memory_log.py    append-only learning log + lint
        └── ResearchStore/Exa   research.py      sourced briefs, identity-gated
        ▼
-MongoDB 8 (Docker) or Atlas — one database, one layer
+MongoDB Atlas — one database, one layer (tests use mongomock)
 ```
 
 **One layer, one database.** Every store method takes `user_id` explicitly and filters on
 it. There is no second domain, no LangGraph checkpointer, and no `/api/agentcircle/*`.
-Only `langchain-openai` remains, for `ChatOpenAI` in `llm.py`.
+Only `langchain-openai` remains, for `ChatOpenAI` in `llm.py`. Local Docker MongoDB is
+not part of the stack — set `MONGODB_URI` to an Atlas connection string.
+
+### Settings (`settings.py`)
+
+`Settings` is a `pydantic-settings` `BaseSettings` that loads `../.env` then `.env`
+(so a repo-root `.env` applies when uvicorn runs from `backend/`). Field names and
+defaults match `.env.example`. Notable fields:
+
+| Field | Role |
+|---|---|
+| `mongodb_uri` / `mongodb_database` / `use_mock_mongodb` | Atlas URI; mongomock for UI-only |
+| `frontend_origin` | CORS base (both `localhost` and `127.0.0.1` spellings — C28) |
+| `jwt_secret` / `jwt_algorithm` / `access_token_ttl_minutes` | Auth; boot guard in §12 |
+| `max_upload_bytes`, `chunk_characters`, `chunk_overlap_characters` | Ingestion |
+| `embedding_provider` / `embedding_model` / `embedding_dimensions` | `voyage` \| `mongodb` \| `openai` \| `local` |
+| `voyage_api_key` / `mongodb_ai_api_key` | Shared Voyage door |
+| `rerank_enabled` / `rerank_model` / `rerank_candidates` | Cross-encoder |
+| `llm_provider` / `llm_model` + provider keys | Agent surfaces |
+| `exa_api_key` / `research_daily_budget_usd` | Deep research |
+| `agent_timeout_seconds` | Live agent bound |
+
+Startup must not embed (C4). Empty LLM / embedding / Exa keys take the labelled decline
+paths in §11 — never invent content.
 
 ### Store construction
 
