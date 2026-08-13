@@ -7,6 +7,8 @@ import type {
   CommunityThread,
   ConnectionsResponse,
   ContextGap,
+  DiscoveryFacets,
+  DiscoveryFilters,
   DiscoveryResponse,
   DirectMessage,
   FeedPost,
@@ -207,11 +209,26 @@ export const communityApi = {
 };
 
 export const discoveryApi = {
-  search: (query: string, limit = 8, minMatchPercent = 50) =>
+  search: (
+    query: string,
+    filters: DiscoveryFilters = {},
+    limit = 8,
+    minMatchPercent = 50,
+  ) =>
     request<DiscoveryResponse>("/api/discover", {
       method: "POST",
-      body: JSON.stringify({ query, limit, min_match_percent: minMatchPercent }),
+      body: JSON.stringify({
+        query,
+        limit,
+        min_match_percent: minMatchPercent,
+        // Send null, not "", for an unset filter: the server treats an empty string as
+        // a real value to match against and would return nobody.
+        location: filters.location?.trim() || null,
+        goal: filters.goal?.trim() || null,
+        evidence_only: filters.evidenceOnly ?? false,
+      }),
     }),
+  facets: () => request<DiscoveryFacets>("/api/discover/facets"),
   status: () => request<RetrievalHealth>("/api/discover/status"),
 };
 

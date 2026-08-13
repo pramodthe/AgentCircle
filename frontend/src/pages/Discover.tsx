@@ -7,19 +7,24 @@ import {
   Loader2,
   MapPin,
   MessagesSquare,
+  RotateCw,
   Search,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Target,
   TriangleAlert,
   UserRound,
+  X,
   Zap,
 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { discoveryApi, mediaApi } from "../api";
 import { PageHeader } from "../AppShell";
 import type {
+  DiscoveryFacets,
+  DiscoveryFilters,
   DiscoveryResponse,
   DiscoveryResult,
   PhotoSearchResponse,
@@ -218,8 +223,22 @@ export default function Discover() {
   const [photos, setPhotos] = useState<PhotoSearchResponse>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [location, setLocation] = useState("");
+  const [goal, setGoal] = useState("");
+  const [evidenceOnly, setEvidenceOnly] = useState(false);
+  const [facets, setFacets] = useState<DiscoveryFacets>();
 
-  const run = async (value: string) => {
+  // Options come from live profiles so the pickers can never offer a city nobody is
+  // in. A failure here leaves the filters usable as free text rather than blocking
+  // the page — they are a convenience over the query, not a prerequisite for it.
+  useEffect(() => {
+    void discoveryApi.facets().then(setFacets).catch(() => undefined);
+  }, []);
+
+  const filters: DiscoveryFilters = { location, goal, evidenceOnly };
+  const anyFilter = Boolean(location || goal || evidenceOnly);
+
+  const run = async (value: string, override?: DiscoveryFilters) => {
     if (value.trim().length < 8) {
       setError("Say a bit more — a vague query gets vague matches.");
       return;
@@ -230,12 +249,30 @@ export default function Discover() {
       if (mode === "photos") {
         setPhotos(await mediaApi.search(value));
       } else {
-        setResult(await discoveryApi.search(value));
+        setResult(await discoveryApi.search(value, override ?? filters));
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Search failed");
     } finally {
       setBusy(false);
+    }
+  };
+
+  /** Re-run immediately on a filter change, but only once there is a query to narrow. */
+  const applyFilter = (next: Partial<DiscoveryFilters>) => {
+    const merged = { ...filters, ...next };
+    if (next.location !== undefined) setLocation(next.location);
+    if (next.goal !== undefined) setGoal(next.goal);
+    if (next.evidenceOnly !== undefined) setEvidenceOnly(next.evidenceOnly);
+    if (result && query.trim().length >= 8) void run(query, merged);
+  };
+
+  const clearFilters = () => {
+    setLocation("");
+    setGoal("");
+    setEvidenceOnly(false);
+    if (result && query.trim().length >= 8) {
+      void run(query, { location: "", goal: "", evidenceOnly: false });
     }
   };
 
@@ -318,6 +355,82 @@ export default function Discover() {
               </button>
             ))}
           </div>
+
+          {mode === "people" && (
+            <div className="discover-filters" role="group" aria-label="Narrow the results">
+              <div className="discover-filter">
+                <MapPin size={15} />
+                {/* Free text with suggestions rather than a fixed dropdown: members
+                    write a location freehand, and a city nobody has typed yet still
+                    has to be searchable the day they arrive. */}
+                <input
+                  list="discover-locations"
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                  onBlur={() => applyFilter({ location })}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      applyFilter({ location });
+                    }
+                  }}
+                  placeholder="Anywhere"
+                  aria-label="Filter by location"
+                  maxLength={80}
+                />
+                <datalist id="discover-locations">
+                  {(facets?.locations || []).map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.count} {item.count === 1 ? "member" : "members"}
+                    </option>
+                  ))}
+                </datalist>
+              </div>
+
+              <div className="discover-filter">
+                <Target size={15} />
+                <select
+                  value={goal}
+                  onChange={(event) => applyFilter({ goal: event.target.value })}
+                  aria-label="Filter by what they are looking for"
+                >
+                  <option value="">Any goal</option>
+                  {(facets?.goals || []).map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Not "verified": nothing in this product verifies an identity, and a
+                  badge saying otherwise would be the one claim it must never make.
+                  What it can prove is whether the member supplied evidence at all. */}
+              <label className="discover-toggle" title="Only members whose agent has documents behind it">
+                <input
+                  type="checkbox"
+                  checked={evidenceOnly}
+                  onChange={(event) => applyFilter({ evidenceOnly: event.target.checked })}
+                />
+                <span className="discover-toggle-track" aria-hidden="true"><i /></span>
+                Evidence-backed only
+              </label>
+
+              {anyFilter && (
+                <button type="button" className="discover-filter-clear" onClick={clearFilters}>
+                  <X size={13} /> Clear
+                </button>
+              )}
+
+              <button
+                type="submit"
+                className="discover-refresh"
+                disabled={busy || query.trim().length < 8}
+              >
+                {busy ? <Loader2 size={14} className="spin" /> : <RotateCw size={14} />} Refresh
+              </button>
+            </div>
+          )}
         </form>
 
         {error && <p className="auth-error" role="alert"><TriangleAlert size={14} /> {error}</p>}
@@ -328,10 +441,34 @@ export default function Discover() {
           <>
             <RetrievalBadge retrieval={result.retrieval} />
             {result.matches.length === 0 ? (
-              <p className="thread-empty">
-                Nobody matched that. Either no member's background covers it, or their
-                profiles are still thin.
-              </p>
+              /* Three different situations render as an empty list, and telling them
+                 apart is the difference between "widen the filter" and "the search is
+                 broken". `candidates` is how many people survived filtering, before
+                 the query ranked any of them. */
+              result.filters.candidates === 0 && anyFilter ? (
+                <p className="thread-empty">
+                  No member matches those filters yet
+                  {result.filters.location ? ` — nobody lists ${result.filters.location}` : ""}.
+                  <button type="button" className="link-button" onClick={clearFilters}>
+                    Clear filters
+                  </button>
+                </p>
+              ) : anyFilter ? (
+                <p className="thread-empty">
+                  {result.filters.candidates}{" "}
+                  {result.filters.candidates === 1 ? "member fits" : "members fit"} these
+                  filters, but none of them match this query. Try a broader ask, or
+                  <button type="button" className="link-button" onClick={clearFilters}>
+                    clear the filters
+                  </button>
+                  .
+                </p>
+              ) : (
+                <p className="thread-empty">
+                  Nobody matched that. Either no member's background covers it, or their
+                  profiles are still thin.
+                </p>
+              )
             ) : (
               <div className="match-list social-match-grid">
                 {result.matches.map((match, index) => (

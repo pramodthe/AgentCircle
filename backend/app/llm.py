@@ -31,6 +31,12 @@ class ChatModelBundle:
         return self.model is not None
 
 
+def _is_gpt5_reasoning_model(model_name: str) -> bool:
+    """True for GPT-5 reasoning ids, including OpenRouter's `vendor/model` form."""
+    bare = model_name.rsplit("/", 1)[-1].lower()
+    return bare.startswith("gpt-5") and "chat" not in bare
+
+
 def normalize_model_name(provider: str, model_name: str) -> tuple[str, list[str]]:
     """Reconcile the configured model id with what the provider actually expects.
 
@@ -55,7 +61,7 @@ def normalize_model_name(provider: str, model_name: str) -> tuple[str, list[str]
     if provider == "openrouter" and "/" not in model_name:
         warnings.append(
             f"LLM_MODEL='{model_name}' has no vendor prefix. OpenRouter expects "
-            "'<vendor>/<model>', for example 'openai/gpt-4o-mini'."
+            "'<vendor>/<model>', for example 'openai/gpt-5.6-luna'."
         )
 
     return model_name, warnings
@@ -92,14 +98,19 @@ def build_chat_model(
         )
 
     base_url = settings.llm_base_url or PROVIDER_BASE_URLS[provider]
-    model = ChatOpenAI(
-        model=model_name,
-        api_key=api_key,
-        base_url=base_url,
-        temperature=temperature,
-        timeout=settings.agent_timeout_seconds,
-        max_retries=2,
-    )
+    # GPT-5 reasoning models reject temperature != 1. ChatOpenAI only auto-drops
+    # that when the id starts with "gpt-5"; OpenRouter ids are prefixed
+    # (`openai/gpt-5.6-luna`), so we omit it ourselves.
+    chat_kwargs: dict = {
+        "model": model_name,
+        "api_key": api_key,
+        "base_url": base_url,
+        "timeout": settings.agent_timeout_seconds,
+        "max_retries": 2,
+    }
+    if not _is_gpt5_reasoning_model(model_name):
+        chat_kwargs["temperature"] = temperature
+    model = ChatOpenAI(**chat_kwargs)
     return ChatModelBundle(
         model=model, provider=provider, model_name=model_name, warnings=tuple(warnings)
     )

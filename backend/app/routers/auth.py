@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
 
 from app.auth import CurrentUser, create_access_token, hash_password, verify_password
-from app.dependencies import AccountsDependency
+from app.dependencies import AccountsDependency, ProfileMediaDependency
+from app.profile_media import public_profile_media
 from app.schemas import AuthResponse, LoginRequest, RegisterRequest
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -44,11 +45,16 @@ def login(payload: LoginRequest, accounts: AccountsDependency) -> AuthResponse:
 
 
 @router.get("/me")
-def me(user: CurrentUser, accounts: AccountsDependency) -> dict:
+def me(
+    user: CurrentUser, accounts: AccountsDependency, profile_media: ProfileMediaDependency
+) -> dict:
     user_id = user["_id"]
     return {
         "user": accounts.public_user(user),
-        "profile": accounts.get_profile(user_id),
+        "profile": {
+            **(accounts.get_profile(user_id) or {}),
+            **public_profile_media(profile_media.for_users([user_id]).get(user_id)),
+        },
         "persona": accounts.get_persona(user_id),
         "onboarding": accounts.onboarding_state(user_id),
     }

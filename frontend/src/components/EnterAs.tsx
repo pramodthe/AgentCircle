@@ -31,7 +31,6 @@ export default function EnterAs() {
     <div className="enter-as">
       <div className="enter-as-grid" role="list">
         {DEMO_ACCOUNTS.map((person) => {
-          const first = person.name.split(" ")[0];
           const loading = busy === person.email;
           return (
             <button
@@ -42,11 +41,20 @@ export default function EnterAs() {
               disabled={busy !== null}
               onClick={() => void enter(person.email)}
             >
-              <span className={`avatar avatar-sm tone-${person.accent}`} aria-hidden="true">
-                {initials(person.name)}
-              </span>
+              {"photo" in person && person.photo ? (
+                <span className="avatar avatar-sm avatar-photo" aria-hidden="true">
+                  <img src={person.photo} alt="" />
+                  {"photoAiGenerated" in person && person.photoAiGenerated && (
+                    <i className="avatar-ai" title="AI-generated image">AI</i>
+                  )}
+                </span>
+              ) : (
+                <span className={`avatar avatar-sm tone-${person.accent}`} aria-hidden="true">
+                  {initials(person.name)}
+                </span>
+              )}
               <span className="enter-as-meta">
-                <b>{loading ? "Entering…" : first}</b>
+                <b>{loading ? "Entering…" : person.name}</b>
                 <small>{person.role}</small>
               </span>
               <ArrowRight size={14} className="enter-as-arrow" aria-hidden="true" />

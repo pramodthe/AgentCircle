@@ -399,6 +399,33 @@ export interface DiscoveryResponse {
   matches: DiscoveryResult[];
   retrieval: RetrievalStatus;
   threshold: DiscoveryThreshold;
+  filters: AppliedDiscoveryFilters;
+}
+
+/** What the caller asked to narrow by, and how many members survived it. */
+export interface AppliedDiscoveryFilters {
+  location: string | null;
+  goal: string | null;
+  evidence_only: boolean;
+  /** Members left after filtering, before the query ranked them. */
+  candidates: number;
+}
+
+export interface DiscoveryFilters {
+  location?: string;
+  goal?: string;
+  evidenceOnly?: boolean;
+}
+
+export interface FacetValue {
+  value: string;
+  count: number;
+}
+
+/** Filter values that exist on real profiles, so no option can return nobody. */
+export interface DiscoveryFacets {
+  locations: FacetValue[];
+  goals: FacetValue[];
 }
 
 export interface InterviewCitation {

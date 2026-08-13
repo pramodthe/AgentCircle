@@ -21,7 +21,7 @@ Every endpoint the product exposes. Base URL `http://localhost:8000`.
 Pings Mongo, then returns the live stack.
 ```json
 { "status": "ok", "database": "mongodb",
-  "model": {"configured": bool, "provider": "openrouter", "model": "openai/gpt-4o-mini",
+  "model": {"configured": bool, "provider": "openrouter", "model": "openai/gpt-5.6-luna",
             "mode": "live" | "deterministic_fallback", "warnings": []},
   "embeddings": {"provider","model","dimensions","space","degraded","semantic"},
   "rerank": {"enabled": bool, "model": str|null, "degraded": bool},
@@ -48,6 +48,8 @@ The same four blocks without the database ping. Used by the explainer page.
 
 ### `GET /api/auth/me`
 `{user: public_user, profile, persona, onboarding}`.
+`profile` includes the same presentation fields as `GET /api/profile`
+(`avatar_media_id`, `avatar_ai_generated`, `cover_media_id`, `cover_ai_generated`).
 
 `onboarding` = `{complete, steps: {account, profile, sources, extras, persona}, source_count, coverage}`.
 

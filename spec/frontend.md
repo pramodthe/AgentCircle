@@ -126,6 +126,8 @@ Uses `useAuth().status` only (no API). Signed-in CTA → `/feed`, else `/login`.
 ### HowItWorks `/how-it-works`
 Reads `runtimeApi.status()`. Explains ingest → chunk → embed → store → retrieve → answer.
 **Decline path shown with equal weight** as the answer path. Auto-advancing stages OK.
+Live stack **Reasoning** label uses `modelAlias()` (`frontend/src/modelAlias.ts`):
+`openai/gpt-5.6-luna` → **GPT-5.6 Luna**, never the vendor routing path.
 
 ### SignIn `/login` `/register`
 Prototype: `EnterAs` person picker (demo accounts). Uses `signIn(email, DEMO_PASSWORD)`.
@@ -222,14 +224,28 @@ Drop legacy demo types (`Agent`, `IntroRequest`, …) unless needed.
 
 ## 8. Demo accounts (`demoAccounts.ts`)
 
+EnterAs shows **ten** featured logins. `scripts.seed_users` creates **50+** members plus a
+social graph so the product looks inhabited. Password for every seeded account is
+`agentcircle`.
+
+Three drive-the-demo accounts carry seeded portraits via `profile_media` (never
+searchable — C25): **Maya**, **Sofia**, and **Priya**. Priya’s is labelled AI-generated.
+Login thumbnails live under `/demo-avatars/`. Kenji stays initials — none of the source
+photos are a man.
+
 ```ts
 export const DEMO_PASSWORD = "agentcircle";
 export const DEMO_ACCOUNTS = [
-  { email: "maya@example.com",  name: "Maya Chen",     role: "Founder · Lumen AI",         accent: "coral" },
-  { email: "sofia@example.com", name: "Sofia Alvarez", role: "Research engineer",          accent: "blue" },
-  { email: "elena@example.com", name: "Elena Rossi",   role: "Clinical ops · CareLoop",    accent: "teal" },
-  { email: "kenji@example.com", name: "Kenji Tanaka",  role: "Infrastructure · GridPilot", accent: "gold" },
-  { email: "priya@example.com", name: "Priya Raman",   role: "Design lead",                accent: "violet" },
+  { email: "maya@example.com",  name: "Maya Chen",        role: "Founder · Lumen AI",         accent: "coral", photo: "/demo-avatars/maya.jpg" },
+  { email: "sofia@example.com", name: "Sofia Alvarez",    role: "Research engineer",          accent: "blue",  photo: "/demo-avatars/sofia.jpg" },
+  { email: "elena@example.com", name: "Elena Rossi",      role: "Clinical ops · CareLoop",    accent: "teal" },
+  { email: "kenji@example.com", name: "Kenji Tanaka",     role: "Infrastructure · GridPilot", accent: "gold" },
+  { email: "priya@example.com", name: "Priya Raman",      role: "Design lead",                accent: "violet", photo: "/demo-avatars/priya.jpg", photoAiGenerated: true },
+  { email: "anika@example.com", name: "Anika Shah",       role: "Partner · Horizon",          accent: "gold" },
+  { email: "leo@example.com",   name: "Leo Park",         role: "Founder · Stackwell",        accent: "green" },
+  { email: "james@example.com", name: "James Okada",      role: "RN · informatics",           accent: "teal" },
+  { email: "tess@example.com",  name: "Tess McKenzie",    role: "Staff engineer · payments",  accent: "blue" },
+  { email: "soren@example.com", name: "Soren Lindqvist",  role: "Product designer",           accent: "violet" },
 ];
 ```
 

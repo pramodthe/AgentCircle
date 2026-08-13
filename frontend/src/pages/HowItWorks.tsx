@@ -19,6 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { runtimeApi } from "../api";
 import { useAuth } from "../auth";
+import { modelAlias } from "../modelAlias";
 import type { StackStatusPayload } from "../types";
 
 /**
@@ -224,7 +225,7 @@ function StagePanel({ stage, live }: { stage: Stage; live?: StackStatusPayload }
           <span><b>Text</b> wording</span>
           <span className="fuse"><Layers size={12} /> fused by reciprocal rank</span>
           <span className={live?.rerank.enabled ? "fuse on" : "fuse"}>
-            <Sparkles size={12} /> {live?.rerank.enabled ? `reranked · ${live.rerank.model}` : "rerank off"}
+            <Sparkles size={12} /> {live?.rerank.enabled ? `reranked · ${modelAlias(live.rerank.model)}` : "rerank off"}
           </span>
         </div>
       </div>
@@ -262,12 +263,6 @@ function StagePanel({ stage, live }: { stage: Stage; live?: StackStatusPayload }
   );
 }
 
-/** "accounts/fireworks/models/deepseek-v4-flash-0731" is a routing path, not a name. */
-function modelName(id: string | null) {
-  if (!id) return "—";
-  return id.split("/").pop() || id;
-}
-
 function LiveStack({ live }: { live?: StackStatusPayload }) {
   if (!live) {
     return (
@@ -279,7 +274,7 @@ function LiveStack({ live }: { live?: StackStatusPayload }) {
   const items = [
     {
       label: "Reasoning",
-      value: live.model.configured ? modelName(live.model.model) : "no model configured",
+      value: live.model.configured ? modelAlias(live.model.model) : "no model configured",
       ok: live.model.mode === "live",
     },
     {
@@ -289,7 +284,7 @@ function LiveStack({ live }: { live?: StackStatusPayload }) {
     },
     {
       label: "Reranker",
-      value: live.rerank.enabled ? modelName(live.rerank.model) : "off",
+      value: live.rerank.enabled ? modelAlias(live.rerank.model) : "off",
       ok: live.rerank.enabled,
     },
   ];

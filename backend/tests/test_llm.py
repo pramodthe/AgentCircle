@@ -51,3 +51,29 @@ def test_no_key_yields_an_unconfigured_bundle_that_still_carries_warnings() -> N
     assert isinstance(bundle, ChatModelBundle)
     assert bundle.configured is False
     assert bundle.warnings, "a bad model id should be reported even before a key is added"
+
+
+def test_gpt5_reasoning_models_omit_temperature_zero() -> None:
+    """OpenRouter prefixes the id, so ChatOpenAI would otherwise send temperature=0."""
+    bundle = build_chat_model(
+        Settings(
+            llm_provider="openrouter",
+            llm_model="openai/gpt-5.6-luna",
+            openrouter_api_key="sk-test",
+        )
+    )
+    assert bundle.configured
+    assert bundle.model is not None
+    assert bundle.model.temperature is None
+
+
+def test_non_reasoning_models_keep_temperature() -> None:
+    bundle = build_chat_model(
+        Settings(
+            llm_provider="openrouter",
+            llm_model="openai/gpt-4o-mini",
+            openrouter_api_key="sk-test",
+        )
+    )
+    assert bundle.model is not None
+    assert bundle.model.temperature == 0.0

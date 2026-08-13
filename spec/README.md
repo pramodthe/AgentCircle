@@ -75,7 +75,7 @@ Start with Phase 0, task 0.1. Stop and report when the phase Done-when criteria 
 - `cd backend && uv run pytest` is green with **no network** (`conftest.py` asserts keys blank).
 - `cd frontend && npm run build` typechecks.
 - `GET /health` reports model / embeddings / rerank / research paths.
-- Demo seed works: `uv run python -m scripts.seed_users` → sign in with `maya@example.com` / `agentcircle`.
+- Demo seed works: `uv run python -m scripts.seed_users` → 50+ members; sign in with `maya@example.com` / `agentcircle`.
 - No `.kiro/` directory exists.
 
 ---
@@ -89,7 +89,7 @@ Start with Phase 0, task 0.1. Stop and report when the phase Done-when criteria 
 | Web | React Router 7 SPA, port **5173** (`127.0.0.1`) |
 | DB | MongoDB Atlas (primary); tests use mongomock |
 | Embeddings | `voyage` \| `mongodb` \| `openai` \| `local` (tests use `local`) |
-| LLM | openrouter \| openai \| fireworks via `langchain-openai` ChatOpenAI |
+| LLM | OpenRouter `openai/gpt-5.6-luna` (GPT-5.6 Luna) by default; `openai` \| `fireworks` also wired via `langchain-openai` ChatOpenAI |
 | Research | Exa (optional) |
 | Rerank | Voyage `rerank-2.5` (optional) |
 | Multimodal | Voyage `voyage-multimodal-3.5` (optional) |

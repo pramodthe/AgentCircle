@@ -16,13 +16,13 @@ uv run pytest
 ## Scripts
 
 ```bash
-uv run python -m scripts.seed_users              # demo accounts; --reset recreates them
+uv run python -m scripts.seed_users              # 50+ demo members + network; --reset recreates them
 uv run python -m scripts.create_search_indexes   # Atlas vector/text indexes (--status, --only, --drop, --recreate, --wait)
 uv run python -m scripts.reembed                 # re-embed every vector after a provider change (--dry-run)
 uv run python -m scripts.backup                  # snapshot every collection to ../snapshots/
 uv run python -m scripts.restore <dir> --target-uri <uri>
 uv run python -m scripts.migrate --target-uri <uri> --write-env   # backup + restore + indexes
-uv run python -m scripts.check_llm               # confirm the configured model actually answers
+uv run python -m scripts.check_llm               # confirm LLM_MODEL (default GPT-5.6 Luna) actually answers
 ```
 
 ## Modules

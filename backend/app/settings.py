@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     rerank_candidates: int = 20
 
     llm_provider: Literal["openrouter", "openai", "fireworks"] = "openrouter"
-    llm_model: str = "openai/gpt-4o-mini"
+    llm_model: str = "openai/gpt-5.6-luna"
     llm_base_url: str | None = None
     llm_api_key: SecretStr | None = None
     openrouter_api_key: SecretStr | None = None

@@ -338,7 +338,8 @@ cd ../frontend && npm run build   # once SPA exists
 
 ### 12.3 seed_users through ordinary signup path
 - [x] Non-uniform consent; no embed on startup.
-- **Constr:** C1 · **Req:** 17.1–17.3
+- [x] Catalog of **50+** members (10 featured EnterAs + crowd), connections, feed posts, DMs, community threads.
+- **Constr:** C4, C3 · **Req:** 17.1–17.3
 
 ### 12.4 Confirm deleted domain stays deleted
 - [x] No `/api/agentcircle`, no LangGraph checkpointer.

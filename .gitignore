@@ -18,6 +18,7 @@ snapshots/
 # Vendored plugin skill docs (MongoDB Claude Code plugin) — not project source.
 .agents/
 .claude/
+CLAUDE.md
 
 # Design sources live in Figma, not in git — 15MB binaries git cannot diff.
 *.fig

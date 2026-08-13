@@ -36,7 +36,7 @@ export default function SignIn({ mode }: { mode: "login" | "register" }) {
         <section className="auth-card auth-social-card">
           <span className="auth-card-kicker">LOG IN</span>
           <h1>Enter as someone</h1>
-          <p className="auth-sub">Demo users — one tap, no password.</p>
+          <p className="auth-sub">Ten featured logins — one tap, no password. Forty more members are already in the network.</p>
           <EnterAs />
         </section>
       </main>

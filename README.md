@@ -67,7 +67,7 @@ cd backend
 uv run python -m scripts.seed_users        # --reset recreates them
 ```
 
-Seeded accounts are `maya@`, `sofia@`, `elena@`, `kenji@`, and `priya@example.com`, password `agentcircle`. They are created through the ordinary signup code path, so anything that works for them works for a real account.
+Seeded logins are `maya@`, `sofia@`, `elena@`, `kenji@`, and `priya@example.com`, password `agentcircle`. The same command also creates **50+** other members, connections, feed posts, DMs, community threads, **recruited agent comments**, and a handful of **agent interviews** so Discover / Feed / Community / Interviews look like a live network. Everyone is created through the ordinary signup path, so anything that works for them works for a real account.
 
 ### Product flow
 
@@ -88,7 +88,7 @@ Everything is optional; each unset key degrades to a labelled fallback rather th
 | `EMBEDDING_PROVIDER` | `voyage` \| `mongodb` \| `openai` \| `local`. `local` is a 128-dim hashed bag-of-tokens — fine for tests, not for anything a user sees. |
 | `VOYAGE_API_KEY` / `MONGODB_AI_API_KEY` | One door for embeddings, rerank, and multimodal. Quota is per account per minute — route them together. |
 | `RERANK_ENABLED` | One API call per search. Off, ordering is coarser and `match_percent` clusters. |
-| `LLM_PROVIDER` / `LLM_MODEL` + `OPENROUTER_API_KEY` \| `OPENAI_API_KEY` \| `FIREWORKS_API_KEY` | No key → the community commenter and interview agent take their decline paths rather than inventing content. |
+| `LLM_PROVIDER` / `LLM_MODEL` + `OPENROUTER_API_KEY` \| `OPENAI_API_KEY` \| `FIREWORKS_API_KEY` | Default: OpenRouter + `openai/gpt-5.6-luna` (**GPT-5.6 Luna**). The How it works page aliases that id to `GPT-5.6 Luna`. No key → the community commenter and interview agent take their decline paths rather than inventing content. |
 | `EXA_API_KEY` / `RESEARCH_DAILY_BUDGET_USD` | Deep research. Unset → the surface reports itself off. |
 | `USE_MOCK_MONGODB=true` | mongomock. UI-only, **not durable across restarts**. |
 

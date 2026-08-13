@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { discoveryApi } from "./api";
 import { useAuth } from "./auth";
+import { Avatar } from "./components/Avatar";
 import type { RetrievalHealth } from "./types";
 
 const NAV = [
@@ -61,8 +62,16 @@ function StackStatus() {
 
 export default function AppShell() {
   const { user, profile, signOut } = useAuth();
-  const initials = (user?.display_name || "?").slice(0, 2).toUpperCase();
   const accent = profile?.theme?.accent || "violet";
+  const avatar = (
+    <Avatar
+      name={user?.display_name}
+      mediaId={profile?.avatar_media_id}
+      accent={accent}
+      size="md"
+      aiGenerated={profile?.avatar_ai_generated}
+    />
+  );
 
   return (
     <div className="shell">
@@ -76,7 +85,7 @@ export default function AppShell() {
         </div>
 
         <NavLink to="/me" className={({ isActive }) => (isActive ? "shell-me active" : "shell-me")}>
-          <span className={`avatar avatar-md tone-${accent}`} aria-hidden="true">{initials}</span>
+          {avatar}
           <span>
             <b>{user?.display_name}</b>
             <small>@{user?.handle}</small>
@@ -118,7 +127,13 @@ export default function AppShell() {
             <Link to="/connections" aria-label="Connections"><Users size={17} /></Link>
             <Link to="/me#documents" aria-label="Agent documents"><Sparkles size={17} /></Link>
             <Link to={`/u/${user?.handle ?? ""}`} className="topbar-avatar" aria-label="View public profile">
-              <span className={`avatar avatar-sm tone-${accent}`}>{initials}</span>
+              <Avatar
+                name={user?.display_name}
+                mediaId={profile?.avatar_media_id}
+                accent={accent}
+                size="sm"
+                aiGenerated={profile?.avatar_ai_generated}
+              />
             </Link>
           </div>
         </header>

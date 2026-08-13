@@ -1,0 +1,98 @@
+# AgentCircle on Render — two services, bring-your-own MongoDB Atlas.
+# Do not add Render Postgres or Key Value. Apply from the default branch (main).
+# Blueprint deeplink (after this file is committed and pushed):
+#   https://dashboard.render.com/blueprint/new?repo=https://github.com/pramodthe/AgentCircle
+#
+# fromService host is the private-network hostname. The SPA and CORS need public
+# https://*.onrender.com origins, so FRONTEND_ORIGIN / VITE_API_BASE_URL are literals.
+
+projects:
+  - name: AgentCircle
+    environments:
+      - name: production
+        envVarGroups:
+          - name: agentcircle-shared
+            envVars:
+              - key: MONGODB_DATABASE
+                value: agentcircle
+              - key: USE_MOCK_MONGODB
+                value: "false"
+              - key: AGENT_FALLBACK_ENABLED
+                value: "true"
+              - key: AGENT_TIMEOUT_SECONDS
+                value: "45"
+
+        services:
+          - type: web
+            name: agentcircle-api
+            runtime: python
+            plan: free
+            region: oregon
+            rootDir: backend
+            buildCommand: pip install uv && uv sync --frozen --no-dev
+            startCommand: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+            healthCheckPath: /health
+            autoDeployTrigger: commit
+            envVars:
+              - fromGroup: agentcircle-shared
+              - key: PYTHON_VERSION
+                value: "3.12"
+              - key: JWT_SECRET
+                generateValue: true
+              - key: MONGODB_URI
+                sync: false
+              - key: FRONTEND_ORIGIN
+                value: https://agentcircle-web.onrender.com
+              - key: EMBEDDING_PROVIDER
+                sync: false
+              - key: EMBEDDING_MODEL
+                sync: false
+              - key: EMBEDDING_DIMENSIONS
+                sync: false
+              - key: VOYAGE_API_KEY
+                sync: false
+              - key: MONGODB_AI_API_KEY
+                sync: false
+              - key: RERANK_ENABLED
+                sync: false
+              - key: RERANK_MODEL
+                sync: false
+              - key: LLM_PROVIDER
+                sync: false
+              - key: LLM_MODEL
+                sync: false
+              - key: OPENROUTER_API_KEY
+                sync: false
+              - key: OPENAI_API_KEY
+                sync: false
+              - key: FIREWORKS_API_KEY
+                sync: false
+              - key: LLM_API_KEY
+                sync: false
+              - key: LLM_BASE_URL
+                sync: false
+              - key: EXA_API_KEY
+                sync: false
+              - key: RESEARCH_DAILY_BUDGET_USD
+                sync: false
+              - key: LANGSMITH_TRACING
+                sync: false
+              - key: LANGSMITH_API_KEY
+                sync: false
+              - key: LANGSMITH_PROJECT
+                sync: false
+
+          - type: web
+            name: agentcircle-web
+            runtime: static
+            rootDir: frontend
+            buildCommand: npm ci && npm run build
+            staticPublishPath: dist
+            autoDeployTrigger: commit
+            routes:
+              - type: rewrite
+                source: /*
+                destination: /index.html
+            envVars:
+              - key: VITE_API_BASE_URL
+                value: https://agentcircle-api.onrender.com

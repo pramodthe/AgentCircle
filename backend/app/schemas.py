@@ -115,6 +115,16 @@ class DiscoverySearch(BaseModel):
     # the default hides people who share vocabulary with the query but nothing else.
     min_match_percent: int = Field(default=DEFAULT_MIN_MATCH_PERCENT, ge=0, le=100)
 
+    # Narrowing filters. `None` means "no constraint"; an empty string would otherwise
+    # read as "match the empty value" and quietly return nobody. Applied to the
+    # candidate universe before ranking, never to the result list after it.
+    location: str | None = Field(default=None, max_length=80)
+    goal: str | None = Field(default=None, max_length=120)
+    # "Has the member actually supplied evidence", which is the only membership claim
+    # this product can back. There is no identity-verification signal anywhere in the
+    # data model, so a "verified" filter would be asserting something nobody checked.
+    evidence_only: bool = False
+
 
 class OutcomeCreate(BaseModel):
     subject_id: str = Field(min_length=1, max_length=64)

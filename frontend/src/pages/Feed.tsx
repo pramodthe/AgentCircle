@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, ty
 import { Link, useNavigate } from "react-router-dom";
 import { socialApi } from "../api";
 import { useAuth } from "../auth";
+import { Avatar } from "../components/Avatar";
 import { SkeletonList } from "../components/Skeleton";
 import { useToast } from "../components/Toast";
 import type { FeedPost, FeedResponse, SocialPerson } from "../types";
@@ -27,15 +28,6 @@ type ComposerAttachment = {
   kind: "post" | "clip";
   previewUrl: string;
 };
-
-function initials(person?: SocialPerson | null | { display_name?: string }) {
-  return (person?.display_name || "?")
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
 
 function relativeTime(value: string) {
   const elapsed = Math.max(0, Date.now() - new Date(value).getTime());
@@ -64,7 +56,13 @@ function StoryViewer({ post, onClose }: { post: FeedPost; onClose: () => void })
     >
       <article className={`story-viewer ${image ? "has-image" : ""} tone-${person?.accent || "violet"}`}>
         <header>
-          <span className={`avatar avatar-md tone-${person?.accent || "violet"}`}>{initials(person)}</span>
+          <Avatar
+            name={person?.display_name}
+            mediaId={person?.avatar_media_id}
+            accent={person?.accent || "violet"}
+            size="md"
+            aiGenerated={person?.avatar_ai_generated}
+          />
           <span>
             <b>{person?.display_name || "Member"}</b>
             <small>{relativeTime(post.created_at)} ago</small>
@@ -91,8 +89,7 @@ function StoryViewer({ post, onClose }: { post: FeedPost; onClose: () => void })
 function PostCard({
   post,
   liked,
-  myInitials,
-  accent,
+  me,
   localComments,
   commenting,
   commentDraft,
@@ -105,8 +102,7 @@ function PostCard({
 }: {
   post: FeedPost;
   liked: boolean;
-  myInitials: string;
-  accent: string;
+  me: { name?: string; mediaId?: string | null; accent: string; aiGenerated?: boolean };
   localComments: string[];
   commenting: boolean;
   commentDraft: string;
@@ -126,9 +122,12 @@ function PostCard({
   return (
     <article className={post.kind === "agent" ? "feed-post agent" : "feed-post"}>
       <header>
-        <span className={`avatar tone-${person?.accent || "violet"}`} aria-hidden="true">
-          {initials(person)}
-        </span>
+        <Avatar
+          name={person?.display_name}
+          mediaId={person?.avatar_media_id}
+          accent={person?.accent || "violet"}
+          aiGenerated={person?.avatar_ai_generated}
+        />
         <div>
           <b>
             {person?.handle ? <Link to={`/u/${person.handle}`}>{person.display_name}</Link> : "Member"}
@@ -201,7 +200,13 @@ function PostCard({
             onAddComment();
           }}
         >
-          <span className={`avatar avatar-sm tone-${accent}`}>{myInitials}</span>
+          <Avatar
+            name={me.name}
+            mediaId={me.mediaId}
+            accent={me.accent}
+            size="sm"
+            aiGenerated={me.aiGenerated}
+          />
           <input
             autoFocus
             aria-label="Write a comment"
@@ -317,7 +322,6 @@ export default function Feed() {
     return rows;
   }, [feed, filter]);
 
-  const myInitials = initials({ display_name: user?.display_name });
   const accent = profile?.theme?.accent || "violet";
   const interests = [...(profile?.interests || []), "UI/UX", "Music", "AI founders", "Product"].slice(0, 4);
 
@@ -524,9 +528,13 @@ export default function Feed() {
                 onClick={() => setActiveStory(post)}
                 style={image ? { backgroundImage: `url(${image})` } : undefined}
               >
-                <span className={`avatar avatar-sm tone-${post.author?.accent || "violet"}`}>
-                  {initials(post.author)}
-                </span>
+                <Avatar
+                  name={post.author?.display_name}
+                  mediaId={post.author?.avatar_media_id}
+                  accent={post.author?.accent || "violet"}
+                  size="sm"
+                  aiGenerated={post.author?.avatar_ai_generated}
+                />
                 <span className="story-chip-shade" />
                 <small>{post.author?.display_name?.split(" ")[0] || "Member"}</small>
               </button>
@@ -548,7 +556,12 @@ export default function Feed() {
 
         <form className="composer open" onSubmit={submitPost}>
           <div className="composer-main">
-            <span className={`avatar tone-${accent}`}>{myInitials}</span>
+            <Avatar
+              name={user?.display_name}
+              mediaId={profile?.avatar_media_id}
+              accent={accent}
+              aiGenerated={profile?.avatar_ai_generated}
+            />
             <textarea
               ref={composerRef}
               aria-label="Write an update"
@@ -657,8 +670,12 @@ export default function Feed() {
             key={post._id}
             post={post}
             liked={feed?.my_reactions[post._id] === "like"}
-            myInitials={myInitials}
-            accent={accent}
+            me={{
+              name: user?.display_name,
+              mediaId: profile?.avatar_media_id,
+              accent,
+              aiGenerated: profile?.avatar_ai_generated,
+            }}
             localComments={comments[post._id] || []}
             commenting={commenting === post._id}
             commentDraft={commenting === post._id ? commentDraft : ""}
@@ -702,9 +719,13 @@ export default function Feed() {
         </h2>
         {suggestions.map((person) => (
           <Link className="suggestion" to={`/u/${person.handle}`} key={person.user_id}>
-            <span className={`avatar avatar-sm tone-${person.accent || "violet"}`}>
-              {initials(person)}
-            </span>
+            <Avatar
+              name={person.display_name}
+              mediaId={person.avatar_media_id}
+              accent={person.accent || "violet"}
+              size="sm"
+              aiGenerated={person.avatar_ai_generated}
+            />
             <span>
               <b>{person.display_name}</b>
               <small>{headlineFor(person)}</small>
