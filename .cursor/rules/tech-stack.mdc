@@ -1,0 +1,47 @@
+---
+description: Locked tech stack — MongoDB, Fireworks, LangChain/LangGraph/LangSmith, Python/FastAPI
+alwaysApply: true
+---
+
+# AgentCircle locked stack
+
+Use only this stack. Do not introduce substitutes without an explicit product/spec change.
+
+## Backend
+
+- **Language:** Python ≥3.12 (`uv`)
+- **API:** FastAPI + uvicorn only
+- Do **not** add Node/Express, Nest, Django, Flask, or a second backend runtime
+
+## Data, vectors, embeddings
+
+- **Primary store:** MongoDB Atlas (document DB)
+- **Vector store:** MongoDB `$vectorSearch` / Atlas Vector Search on the same cluster
+- **Embeddings:** MongoDB embedding path (`EMBEDDING_PROVIDER=mongodb` in prod-shaped configs)
+- Tests may use `local` embeddings + mongomock; no network calls in pytest
+- Do **not** add Postgres, Redis-as-primary-DB, Pinecone, Weaviate, Chroma, Qdrant, or a separate vector DB
+
+## LLM
+
+- **Provider:** Fireworks (via `langchain-openai` `ChatOpenAI` / compatible base URL)
+- Do **not** default new work to OpenAI, Anthropic, OpenRouter, or other hosts unless the task is an escape hatch already named in `.env.example`
+
+## Agent orchestration (only)
+
+- **LangChain** — model/tool wiring for agents
+- **LangGraph** — agent graphs / orchestration flows
+- **LangSmith** — tracing, eval, observability for those agents
+- Use this trio **only** for agent orchestration and observability — not for HTTP routing, auth, CRUD, or as a second persistence layer
+- Do **not** rebuild the deleted `/api/agentcircle/*` LangGraph checkpointer demo domain
+
+## Frontend (unchanged)
+
+- React + Vite + TypeScript SPA; talk to the FastAPI backend over HTTP
+- No server-side agent runtime in the frontend
+
+## When tempted to diverge
+
+1. Prefer extending existing MongoDB collections / indexes (`spec/data-model.md`)
+2. Prefer Fireworks chat models already wired in settings
+3. Prefer a LangGraph graph for multi-step agent behavior; keep FastAPI routes thin
+4. If the stack must change: update `spec/` first, then this rule

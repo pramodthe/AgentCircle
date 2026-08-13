@@ -57,11 +57,10 @@ def main() -> None:
     # 1. A fresh snapshot if the old cluster is still reachable. Best effort on purpose:
     #    the whole point of this script is the case where it is already gone.
     if not args.skip_backup:
-        backup_ok = run(
+        if not run(
             "1/4  Snapshot the current cluster",
             ["scripts.backup", "--label", "premigration"],
-        )
-        if not backup_ok:
+        ):
             print("\n  ! could not snapshot the current cluster — it may already be gone.")
             print("    Continuing with the newest snapshot already on disk.")
     else:

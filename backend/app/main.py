@@ -11,7 +11,7 @@ from app.agent_memory import AgentMemoryStore
 from app.auth import assert_signing_key_is_safe
 from app.community import CommunityStore
 from app.community_agent import CommunityCommenter
-from app.embeddings import build_embedding_client, voyage_route
+from app.embeddings import build_embedding_client
 from app.interview import InterviewAgent, InterviewStore
 from app.llm import build_chat_model
 from app.media import MediaStore, MultimodalEmbedder
@@ -116,12 +116,16 @@ async def lifespan(app: FastAPI):
     app.state.exa = ExaClient(
         api_key=settings.exa_api_key.get_secret_value() if settings.exa_api_key else None
     )
-    # Photo embeddings follow EMBEDDING_PROVIDER like everything else in the Voyage
-    # family. There is no local stand-in that can look at an image, so with no key the
-    # whole surface reports itself off rather than guessing.
-    ai_base, ai_key = voyage_route(settings)
+    # Photo search needs Voyage's multimodal endpoint. MongoDB AI does not cover
+    # multimodal (ai.mongodb.com has no /multimodalembeddings), so this always uses
+    # VOYAGE_API_KEY — independent of EMBEDDING_PROVIDER. With no key the surface
+    # reports itself off rather than guessing.
+    voyage_key = (
+        settings.voyage_api_key.get_secret_value() if settings.voyage_api_key else None
+    )
     app.state.multimodal = MultimodalEmbedder(
-        api_key=ai_key, endpoint=f"{ai_base}/multimodalembeddings"
+        api_key=voyage_key,
+        endpoint="https://api.voyageai.com/v1/multimodalembeddings",
     )
     app.state.people_search = people_search
     app.state.embeddings = embeddings

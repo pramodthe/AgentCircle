@@ -1,6 +1,4 @@
 
-import httpx
-
 from app.community import CommunityStore, normalize_question
 from app.embeddings import EmbeddingClient
 from app.mock_mongo import create_mock_client
@@ -8,19 +6,6 @@ from app.rerank import Reranker
 from app.search import PeopleSearch
 
 # --------------------------------------------------------------------- rerank
-
-
-class _Resp:
-    def __init__(self, status: int) -> None:
-        self.status_code = status
-        self.headers: dict = {}
-
-    def json(self) -> dict:
-        return {"data": []}
-
-    def raise_for_status(self) -> None:
-        if self.status_code >= 400:
-            raise httpx.HTTPStatusError("boom", request=None, response=self)
 
 
 def test_reranker_without_a_key_is_a_no_op_that_says_so() -> None:
@@ -36,16 +21,11 @@ def test_reranker_skips_trivial_candidate_sets() -> None:
     assert r.rank("query", []) is None
 
 
-def test_a_failed_rerank_disables_itself_rather_than_retrying_every_search(
-    monkeypatch,
-) -> None:
-    """Permanent auth failures latch off; must stay offline (no live Voyage call)."""
-
-    monkeypatch.setattr(httpx, "post", lambda *a, **k: _Resp(401))
+def test_a_failed_rerank_disables_itself_rather_than_retrying_every_search() -> None:
     r = Reranker(api_key="definitely-not-valid", timeout=5.0)
     assert r.available is True
     assert r.rank("query", ["alpha document", "beta document"]) is None
-    assert r.available is False, "one permanent failure should stop retrying every search"
+    assert r.available is False, "one failure should stop it adding latency to every search"
     assert r.describe()["degraded"] is True
 
 
