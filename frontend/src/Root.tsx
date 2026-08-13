@@ -16,6 +16,7 @@ import Onboarding from "./pages/Onboarding";
 import PublicProfile from "./pages/PublicProfile";
 import Research from "./pages/Research";
 import SignIn from "./pages/SignIn";
+import VectorBeastCanvas from "./pages/VectorBeastCanvas";
 
 function Booting() {
   return (
@@ -73,6 +74,7 @@ export default function Root() {
       <Route element={<Protected><AppShell /></Protected>}>
         <Route path="feed" element={<Feed />} />
         <Route path="find" element={<Discover />} />
+        <Route path="canvas" element={<VectorBeastCanvas />} />
         <Route path="community" element={<CommunityIndex />} />
         <Route path="community/:postId" element={<CommunityThreadPage />} />
         <Route path="messages" element={<Messages />} />

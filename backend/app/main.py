@@ -181,6 +181,8 @@ app.add_middleware(
 )
 
 
+from app.routers import canvas as canvas_router
+
 app.include_router(auth_router.router)
 app.include_router(profile_router.router)
 app.include_router(persona_router.router)
@@ -192,6 +194,7 @@ app.include_router(social_router.router)
 app.include_router(media_router.router)
 app.include_router(messages_router.router)
 app.include_router(research_router.router)
+app.include_router(canvas_router.router)
 
 
 def _runtime(request: Request) -> dict:

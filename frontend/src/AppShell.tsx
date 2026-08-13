@@ -2,6 +2,7 @@ import {
   Compass,
   Database,
   Home,
+  Layers,
   LogOut,
   MessagesSquare,
   Radio,
@@ -19,6 +20,7 @@ import type { RetrievalHealth } from "./types";
 const NAV = [
   { to: "/feed", label: "News Feed", icon: Home, end: true },
   { to: "/find", label: "Discover", icon: Compass },
+  { to: "/canvas", label: "Vector Canvas", icon: Layers },
   { to: "/community", label: "Community", icon: Radio },
   { to: "/messages", label: "Messages", icon: MessagesSquare },
   { to: "/connections", label: "Connections", icon: Users },
