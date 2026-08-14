@@ -35,6 +35,262 @@ Two contracts govern changes here:
 
 **Everything above has a working degraded mode, and the UI looks the same either way** — so `GET /api/runtime/status` and the sidebar status line report the live model, embedding, rerank, and research paths. Keep them honest.
 
+## How it works
+
+Seven collapsible sections below — click any one to expand it. Read them in order for the whole path from "a member uploads a resume" to "an agent declines to answer", or open just the one you need.
+
+| | Section | Answers |
+|---|---|---|
+| 1 | The system at a glance | What talks to what |
+| 2 | The grounding pipeline | How a person becomes findable |
+| 3 | Hybrid discovery | How people get ranked |
+| 4 | How an agent answers | Where a decline comes from |
+| 5 | What MongoDB actually does | Store, vector index, graph |
+| 6 | Where LangChain fits | And where it deliberately doesn't |
+| 7 | Degraded modes | What happens with no API keys |
+
+<details open>
+<summary><b>1. The system at a glance</b></summary>
+
+One SPA, one API, one database. No message queue, no second service, no ORM.
+
+```mermaid
+flowchart LR
+    subgraph Browser
+        SPA["React 19 + Vite 7 SPA<br/>Root.tsx route guards<br/>api.ts + Bearer token"]
+    end
+
+    subgraph Server["FastAPI — thin routes"]
+        Routers["routers/*.py"]
+        Stores["Stores built once in lifespan<br/>and hung on app.state"]
+        Agents["PersonaBuilder · InterviewAgent<br/>CommunityCommenter · ResearchAgent"]
+    end
+
+    subgraph Atlas["MongoDB Atlas — one database"]
+        Docs[("Documents<br/>users · profiles · posts")]
+        Vectors[("persona_chunks<br/>+ 1024-dim vectors")]
+        Edges[("memory_edges<br/>traversed with graphLookup")]
+    end
+
+    Voyage["Voyage AI<br/>embeddings · rerank · multimodal"]
+    LLM["LangChain ChatOpenAI<br/>OpenRouter · OpenAI · Fireworks"]
+    Exa["Exa<br/>deep research"]
+
+    SPA -->|"HTTPS + JWT"| Routers
+    Routers --> Stores
+    Routers --> Agents
+    Stores --> Docs
+    Stores --> Vectors
+    Stores --> Edges
+    Agents -->|"grounding chunks"| Vectors
+    Agents --> LLM
+    Stores --> Voyage
+    Agents -.->|"consent-gated"| Exa
+```
+
+**Identity comes from a signed JWT and nothing else** — never from a request body. Every store method takes `user_id` explicitly, so a client cannot act as another account by naming it.
+
+</details>
+
+<details>
+<summary><b>2. The grounding pipeline</b></summary>
+
+This is the part that makes the whole product possible: a member is searchable *because of what they supplied*, and every claim points back at the sentence that supports it.
+
+```mermaid
+flowchart TD
+    Upload["Resume · DOCX · PDF<br/>or a URL"] --> Extract["ingestion.py<br/>pypdf · python-docx · BeautifulSoup"]
+    Declared["Profile fields you type<br/>headline · skills · looking_for"] --> Chunk
+
+    Extract --> Source[("persona_sources<br/>one row per source")]
+    Source --> Chunk["chunk_text<br/>1200 chars, 180 overlap"]
+    Chunk --> Embed["embed_batch — never in a loop"]
+    Embed --> Chunks[("persona_chunks<br/>verbatim text + vector + provenance")]
+
+    Chunks --> Extract2["extract_incremental<br/>per source, results unioned"]
+    Extract2 --> Merge["merge_persona<br/>each item keeps every supporting chunk"]
+    Merge --> Persona[("personas<br/>structured + cited")]
+
+    Merge -.->|"citation does not<br/>resolve to a real chunk"| Drop["Dropped, not kept"]
+```
+
+Two layers on purpose. `persona_chunks` is **evidence** — verbatim, embedded, attributable. `personas` is a **summary** built from it, and a rebuild can only ever *add*: extraction is non-deterministic and the prompt window is bounded, so re-deriving from scratch would silently lose facts it found last time (C23).
+
+> [!NOTE]
+> `embed_batch()` exists because providers meter by **request count**, not tokens. Four interview questions took 63.6s one at a time versus 0.40s batched — a 157× difference, and the entire reason "interviews are slow" was ever a bug.
+
+</details>
+
+<details>
+<summary><b>3. Hybrid discovery</b></summary>
+
+Two retrievers, because they fail in opposite directions — then fusion, rerank, and trust.
+
+```mermaid
+flowchart TD
+    Q["Plain-language query<br/>'someone who will pressure-test a prototype'"] --> Filters
+
+    Filters["Narrowing filters<br/>location · goal · evidence-backed<br/>applied BEFORE ranking"] --> Emb["Embed the query"]
+
+    Emb --> Vec["$vectorSearch over persona_chunks<br/>finds shared meaning, weak on proper nouns"]
+    Filters --> Txt["$search over profiles — Lucene<br/>nails literal terms, useless at 0-to-1 experience"]
+
+    Vec --> RRF["Reciprocal Rank Fusion<br/>combines RANKS, not scores"]
+    Txt --> RRF
+
+    RRF --> Rerank["Cross-encoder rerank<br/>reads query + candidate together"]
+    Rerank --> Trust["Trust factor<br/>min 1.0 — demotes, never promotes"]
+    Trust --> Out["Ranked matches<br/>each citing the chunk that justified it"]
+```
+
+**Why RRF and not a weighted sum?** Cosine similarity and Lucene's BM25 aren't on a comparable scale — adding them lets whichever has the wider range dominate. RRF only asks "how near the top of its own list did this person appear".
+
+**Why can trust only demote?** RRF scores are deliberately flat — rank 1 and rank 2 differ by ~1.6% — so any meaningful upward multiplier would let *people you like* outrank *people who know the answer* (C20).
+
+</details>
+
+<details>
+<summary><b>4. How an agent answers</b></summary>
+
+The single most important path in the product, because this is where a fabricated claim would enter if anything let it.
+
+```mermaid
+sequenceDiagram
+    actor Asker
+    participant API as FastAPI
+    participant Mongo as MongoDB
+    participant LLM as ChatOpenAI
+
+    Asker->>API: Ask this member's agent
+    API->>API: Consent gate — has the owner opted in?
+    API->>Mongo: Retrieve chunks for THIS owner only
+    Mongo-->>API: Candidate evidence
+
+    alt No relevant evidence
+        API-->>Asker: Decline — "not in profile"
+    else Evidence found
+        API->>LLM: Question + only the supplied chunks
+        LLM-->>API: Draft answer + claimed citations
+        API->>API: Intersect citations with chunks actually supplied
+        alt No citation survives
+            API-->>Asker: Decline — recorded as a context gap
+        else Citations resolve
+            API-->>Asker: Answer + verifiable source
+        end
+    end
+
+    Note over Asker,API: Nothing above changed state.<br/>Publishing needs a separate user-initiated call.
+```
+
+Three rules are doing the work here:
+
+1. **The owner of retrieved data comes from server context**, never from model input.
+2. **Claimed citations are intersected with what was actually supplied.** A model will cheerfully cite an index it invented; anything that doesn't resolve is dropped, and an answer left with nothing becomes a decline (C24).
+3. **The approval gate.** Agents produce *content*. Publishing a comment, accepting a connection, sending an introduction — each is a separate call a human makes.
+
+</details>
+
+<details>
+<summary><b>5. What MongoDB actually does</b></summary>
+
+Atlas is the primary store, the vector database, the text index, **and** the graph traversal — one cluster, no second system.
+
+```mermaid
+flowchart TD
+    subgraph Identity["Identity and evidence"]
+        U[("users")]
+        P[("profiles")]
+        PS[("persona_sources")]
+        PC[("persona_chunks")]
+        PE[("personas")]
+        MS[("member_settings")]
+    end
+
+    subgraph Social["Social graph"]
+        C[("connections")]
+        FP[("feed_posts")]
+        DM[("direct_messages")]
+    end
+
+    subgraph AgentMem["Agent memory"]
+        AM[("agent_memory<br/>private per-edge")]
+        ME[("memory_edges<br/>shareable")]
+        ML[("memory_log<br/>append-only")]
+    end
+
+    subgraph Signals["Trust"]
+        OUT[("outcomes")]
+        MT[("member_trust")]
+        AC[("agent_calibration")]
+    end
+
+    PC -.->|"persona_chunks_vector"| VS["$vectorSearch"]
+    P -.->|"profiles_text"| TS["$search"]
+    PM[("persona_media")] -.->|"persona_media_vector"| VS
+    ME -.-> GL["$graphLookup"]
+```
+
+Exactly **three** Atlas Search indexes — `persona_chunks_vector`, `profiles_text`, `persona_media_vector` — which is precisely the free tier's per-cluster quota, so a cluster shared with another project will not fit them (C26).
+
+Every stored vector carries its **space** (`provider:model:dimensions`) and retrieval filters on it. A provider mismatch therefore returns *nothing* rather than silent nonsense — which is why switching embedding providers has exactly one correct order (C5): `reembed` → `create_search_indexes --recreate` → flip the config.
+
+Two design decisions worth knowing:
+
+- **`agent_memory` is keyed on the connection pair and never merges into the persona.** What two agents said to each other is not a fact about you.
+- **Evidence photos and avatars are different collections, permanently.** `persona_media` is embedded and consent-gated; `profile_media` is never embedded, never indexed, never reachable from a search endpoint. The separation *is* the enforcement (C25).
+
+</details>
+
+<details>
+<summary><b>6. Where LangChain fits</b></summary>
+
+Deliberately one seam, not the architecture.
+
+```mermaid
+flowchart LR
+    Callers["CommunityCommenter<br/>InterviewAgent<br/>PersonaBuilder<br/>ResearchAgent"] --> Bundle["llm.py<br/>ChatModelBundle"]
+    Bundle --> LC["langchain_openai.ChatOpenAI"]
+    LC --> OR["OpenRouter"]
+    LC --> OA["OpenAI"]
+    LC --> FW["Fireworks"]
+    Bundle -.->|"no key configured"| Fallback["Deterministic fallback<br/>agents take their decline paths"]
+    LC -.->|"optional"| LS["LangSmith tracing"]
+```
+
+`llm.py` is the **only** module that imports LangChain. It builds one `ChatOpenAI` in the app lifespan and hands it to every agent. All three providers speak the OpenAI wire format, so switching is a `base_url` and a model-name normalisation — `openai/gpt-4o-mini` on OpenRouter is `gpt-4o-mini` on OpenAI and `accounts/…` on Fireworks, and `normalize_model_name` reconciles that instead of making you remember it.
+
+LangChain is used for **model wiring and tracing only** — never for HTTP routing, auth, CRUD, or as a second persistence layer. There is no LangGraph in this codebase: the durable-workflow checkpointer from the hackathon-era demo was deleted and must not come back.
+
+</details>
+
+<details>
+<summary><b>7. Degraded modes</b></summary>
+
+Every layer runs without its API key, and **the UI looks identical either way** — which is exactly why the runtime status has to be honest.
+
+| Layer | Configured | Degraded to | Reported as |
+|---|---|---|---|
+| LLM | OpenRouter / OpenAI / Fireworks | Agents take their decline paths | `deterministic_fallback` |
+| Embeddings | Voyage or MongoDB AI | 128-dim hashed bag-of-tokens | `local` |
+| Retrieval | Atlas `$vectorSearch` + `$search` | In-process cosine + keyword | `atlas_vector: false` |
+| Rerank | Voyage `rerank-2.5` | Fusion order only | `off` or `skipped` |
+| Research | Exa | Surface reports itself off | `available: false` |
+| Database | MongoDB Atlas | mongomock, not durable | `USE_MOCK_MONGODB` |
+
+```mermaid
+flowchart LR
+    Req["Any request"] --> Check{"Key present<br/>and index live?"}
+    Check -->|Yes| Live["Run the real path<br/>mode: live"]
+    Check -->|No| Fall["Run the fallback"]
+    Fall --> Stamp["Stamp runtime_mode<br/>on the stored artifact"]
+    Live --> Stamp
+    Stamp --> Status["GET /api/runtime/status<br/>+ sidebar status line"]
+```
+
+`runtime_mode` travels **with the stored output**, so a fallback answer can never be mistaken for a live one when someone reads it back a week later. A rate-limited rerank reports `skipped` rather than `off` — reporting it as `off` sends you looking for a broken key (C7).
+
+</details>
+
 ## Run locally
 
 Requirements: Node.js 20+, `uv`, Python ≥3.12, and a MongoDB Atlas URI in `.env`.
